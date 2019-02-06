@@ -577,40 +577,40 @@ var (
 	}
 
 	NodeFooValidation = nodes.NodeValidation{
-		Boot: nodes.InterfaceValidation{
+		Boot: nodes.DriverValidation{
 			Result: false,
 			Reason: "Cannot validate image information for node a62b8495-52e2-407b-b3cb-62775d04c2b8 because one or more parameters are missing from its instance_info and insufficent information is present to boot from a remote volume. Missing are: ['ramdisk', 'kernel', 'image_source']",
 		},
-		Console: nodes.InterfaceValidation{
+		Console: nodes.DriverValidation{
 			Result: false,
 			Reason: "Driver ipmi does not support console (disabled or not implemented).",
 		},
-		Deploy: nodes.InterfaceValidation{
+		Deploy: nodes.DriverValidation{
 			Result: false,
 			Reason: "Cannot validate image information for node a62b8495-52e2-407b-b3cb-62775d04c2b8 because one or more parameters are missing from its instance_info and insufficent information is present to boot from a remote volume. Missing are: ['ramdisk', 'kernel', 'image_source']",
 		},
-		Inspect: nodes.InterfaceValidation{
+		Inspect: nodes.DriverValidation{
 			Result: false,
 			Reason: "Driver ipmi does not support inspect (disabled or not implemented).",
 		},
-		Management: nodes.InterfaceValidation{
+		Management: nodes.DriverValidation{
 			Result: true,
 		},
-		Network: nodes.InterfaceValidation{
+		Network: nodes.DriverValidation{
 			Result: true,
 		},
-		Power: nodes.InterfaceValidation{
+		Power: nodes.DriverValidation{
 			Result: true,
 		},
-		Raid: nodes.InterfaceValidation{
+		Raid: nodes.DriverValidation{
 			Result: false,
 			Reason: "Driver ipmi does not support raid (disabled or not implemented).",
 		},
-		Rescue: nodes.InterfaceValidation{
+		Rescue: nodes.DriverValidation{
 			Result: false,
 			Reason: "Driver ipmi does not support rescue (disabled or not implemented).",
 		},
-		Storage: nodes.InterfaceValidation{
+		Storage: nodes.DriverValidation{
 			Result: true,
 		},
 	}
