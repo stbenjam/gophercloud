@@ -19,8 +19,7 @@ func initClientOpts(client *gophercloud.ProviderClient, eo EndpointOpts) (*gophe
 		return nil, fmt.Errorf("IronicEndpoint is required")
 	}
 
-	endpoint := fmt.Sprintf("%s%s", gophercloud.NormalizeURL(eo.IronicEndpoint), client.TokenID)
-	sc.Endpoint = gophercloud.NormalizeURL(endpoint)
+	sc.Endpoint = gophercloud.NormalizeURL(eo.IronicEndpoint)
 	sc.ProviderClient = client
 	return sc, nil
 }
