@@ -8,7 +8,7 @@ import (
 )
 
 func TestNoAuth(t *testing.T) {
-	noauthClient, err := noauth.NewBaremetalNoAuth(noauth.EndpointOpts{
+	noauthClient, err := noauth.NewBareMetalNoAuth(noauth.EndpointOpts{
 		IronicEndpoint: "http://ironic:6385/v1",
 	})
 	th.AssertNoErr(t, err)
