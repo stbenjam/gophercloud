@@ -223,3 +223,38 @@ type UpdateResult struct {
 type DeleteResult struct {
 	gophercloud.ErrResult
 }
+
+// ValidateResult is the response from a Validate operation. Call its Extract
+// method to interpret it as a NodeValidation struct.
+type ValidateResult struct {
+	gophercloud.Result
+}
+
+// Each element in the response will contain a “result” variable, which will have a value of “true” or “false”, and
+// also potentially a reason. A value of nil indicates that the Node’s driver does not support that interface.
+type InterfaceValidation struct {
+	Result bool   `json:"result"`
+	Reason string `json:"reason"`
+}
+
+//  Ironic validates whether the Node’s driver has enough information to manage the Node. This polls each interface on
+//  the driver, and returns the status of that interface as an InterfaceValidation struct.
+type NodeValidation struct {
+	Boot       InterfaceValidation `json:"boot"`
+	Console    InterfaceValidation `json:"console"`
+	Deploy     InterfaceValidation `json:"deploy"`
+	Inspect    InterfaceValidation `json:"inspect"`
+	Management InterfaceValidation `json:"management"`
+	Network    InterfaceValidation `json:"network"`
+	Power      InterfaceValidation `json:"power"`
+	Raid       InterfaceValidation `json:"raid"`
+	Rescue     InterfaceValidation `json:"rescue"`
+	Storage    InterfaceValidation `json:"storage"`
+}
+
+// Extract interprets a validateResult as NodeValidation, if possible.
+func (r ValidateResult) Extract() (*NodeValidation, error) {
+	var s NodeValidation
+	err := r.ExtractInto(&s)
+	return &s, err
+}

@@ -152,3 +152,17 @@ func TestUpdateNode(t *testing.T) {
 	th.CheckDeepEquals(t, NodeFoo, *actual)
 
 }
+
+func TestValidateNode(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleNodeValidateSuccessfully(t)
+
+	c := client.ServiceClient()
+	actual, err := nodes.Validate(c, "1234asdf").Extract()
+	if err != nil {
+		t.Fatalf("Unexpected Get error: %v", err)
+	}
+
+	th.CheckDeepEquals(t, NodeFooValidation, *actual)
+}

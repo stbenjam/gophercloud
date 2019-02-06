@@ -76,4 +76,8 @@ resource in the OpenStack Bare Metal service.
 	if err != nil {
 		panic(err)
 	}
+
+	// Example to Validate Node
+    validation, err := nodes.Validate(client, "a62b8495-52e2-407b-b3cb-62775d04c2b8").Extract()
+
 */

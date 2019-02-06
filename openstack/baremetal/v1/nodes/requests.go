@@ -301,3 +301,12 @@ func Delete(client *gophercloud.ServiceClient, id string) (r DeleteResult) {
 	_, r.Err = client.Delete(deleteURL(client, id), nil)
 	return
 }
+
+// Request that Ironic validate whether the Node’s driver has enough information to manage the Node. This polls each
+// interface on the driver, and returns the status of that interface.
+func Validate(client *gophercloud.ServiceClient, id string) (r ValidateResult) {
+	_, r.Err = client.Get(validateURL(client, id), &r.Body, &gophercloud.RequestOpts{
+		OkCodes: []int{200},
+	})
+	return
+}

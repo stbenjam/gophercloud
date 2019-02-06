@@ -480,6 +480,51 @@ const SingleNodeBody = `
 }
 `
 
+const NodeValidationBody = `
+{
+  "bios": {
+    "reason": "Driver ipmi does not support bios (disabled or not implemented).",
+    "result": false
+  },
+  "boot": {
+    "reason": "Cannot validate image information for node a62b8495-52e2-407b-b3cb-62775d04c2b8 because one or more parameters are missing from its instance_info and insufficent information is present to boot from a remote volume. Missing are: ['ramdisk', 'kernel', 'image_source']",
+    "result": false
+  },
+  "console": {
+    "reason": "Driver ipmi does not support console (disabled or not implemented).",
+    "result": false
+  },
+  "deploy": {
+    "reason": "Cannot validate image information for node a62b8495-52e2-407b-b3cb-62775d04c2b8 because one or more parameters are missing from its instance_info and insufficent information is present to boot from a remote volume. Missing are: ['ramdisk', 'kernel', 'image_source']",
+    "result": false
+  },
+  "inspect": {
+    "reason": "Driver ipmi does not support inspect (disabled or not implemented).",
+    "result": false
+  },
+  "management": {
+    "result": true
+  },
+  "network": {
+    "result": true
+  },
+  "power": {
+    "result": true
+  },
+  "raid": {
+    "reason": "Driver ipmi does not support raid (disabled or not implemented).",
+    "result": false
+  },
+  "rescue": {
+    "reason": "Driver ipmi does not support rescue (disabled or not implemented).",
+    "result": false
+  },
+  "storage": {
+    "result": true
+  }
+}
+`
+
 var (
 	NodeFoo = nodes.Node{
 		UUID:                 "d2630783-6ec8-4836-b556-ab427c4b581e",
@@ -529,6 +574,45 @@ var (
 		ConductorGroup:      "",
 		Protected:           false,
 		ProtectedReason:     "",
+	}
+
+	NodeFooValidation = nodes.NodeValidation{
+		Boot: nodes.InterfaceValidation{
+			Result: false,
+			Reason: "Cannot validate image information for node a62b8495-52e2-407b-b3cb-62775d04c2b8 because one or more parameters are missing from its instance_info and insufficent information is present to boot from a remote volume. Missing are: ['ramdisk', 'kernel', 'image_source']",
+		},
+		Console: nodes.InterfaceValidation{
+			Result: false,
+			Reason: "Driver ipmi does not support console (disabled or not implemented).",
+		},
+		Deploy: nodes.InterfaceValidation{
+			Result: false,
+			Reason: "Cannot validate image information for node a62b8495-52e2-407b-b3cb-62775d04c2b8 because one or more parameters are missing from its instance_info and insufficent information is present to boot from a remote volume. Missing are: ['ramdisk', 'kernel', 'image_source']",
+		},
+		Inspect: nodes.InterfaceValidation{
+			Result: false,
+			Reason: "Driver ipmi does not support inspect (disabled or not implemented).",
+		},
+		Management: nodes.InterfaceValidation{
+			Result: true,
+		},
+		Network: nodes.InterfaceValidation{
+			Result: true,
+		},
+		Power: nodes.InterfaceValidation{
+			Result: true,
+		},
+		Raid: nodes.InterfaceValidation{
+			Result: false,
+			Reason: "Driver ipmi does not support raid (disabled or not implemented).",
+		},
+		Rescue: nodes.InterfaceValidation{
+			Result: false,
+			Reason: "Driver ipmi does not support rescue (disabled or not implemented).",
+		},
+		Storage: nodes.InterfaceValidation{
+			Result: true,
+		},
 	}
 
 	NodeBar = nodes.Node{
@@ -706,5 +790,15 @@ func HandleNodeUpdateSuccessfully(t *testing.T, response string) {
 		th.TestJSONRequest(t, r, `[{"op": "replace", "path": "/driver", "value": "new-driver"}]`)
 
 		fmt.Fprintf(w, response)
+	})
+}
+
+func HandleNodeValidateSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/validate", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "GET")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestHeader(t, r, "Accept", "application/json")
+
+		fmt.Fprintf(w, NodeValidationBody)
 	})
 }
