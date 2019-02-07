@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -32,6 +33,7 @@ func yellow(str interface{}) string {
 }
 
 func logFatal(t *testing.T, str string) {
+	debug.PrintStack()
 	t.Fatalf(logBodyFmt, prefix(3), str)
 }
 

@@ -802,3 +802,14 @@ func HandleNodeValidateSuccessfully(t *testing.T) {
 		fmt.Fprintf(w, NodeValidationBody)
 	})
 }
+
+// HandleInjectNMISuccessfully sets up the test server to respond to a node InjectNMI request
+func HandleInjectNMISuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/management/inject_nmi", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestBody(t, r, "{}")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+}

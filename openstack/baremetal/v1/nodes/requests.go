@@ -310,3 +310,12 @@ func Validate(client *gophercloud.ServiceClient, id string) (r ValidateResult) {
 	})
 	return
 }
+
+// Inject NMI (Non-Masking Interrupts) for the given Node. This feature can be used for hardware diagnostics, and
+// actual support depends on a driver.
+func InjectNMI(client *gophercloud.ServiceClient, id string) (r InjectNMIResult) {
+	_, r.Err = client.Put(injectNMIURL(client, id), map[string]string{}, nil, &gophercloud.RequestOpts{
+		OkCodes: []int{204},
+	})
+	return
+}

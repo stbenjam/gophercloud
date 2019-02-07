@@ -125,10 +125,8 @@ func TestGetNode(t *testing.T) {
 
 	c := client.ServiceClient()
 	actual, err := nodes.Get(c, "1234asdf").Extract()
-	if err != nil {
-		t.Fatalf("Unexpected Get error: %v", err)
-	}
 
+	th.AssertNoErr(t, err)
 	th.CheckDeepEquals(t, NodeFoo, *actual)
 }
 
@@ -145,12 +143,9 @@ func TestUpdateNode(t *testing.T) {
 			Value: "new-driver",
 		},
 	}).Extract()
-	if err != nil {
-		t.Fatalf("Unexpected Update error: %v", err)
-	}
 
+	th.AssertNoErr(t, err)
 	th.CheckDeepEquals(t, NodeFoo, *actual)
-
 }
 
 func TestValidateNode(t *testing.T) {
@@ -160,9 +155,16 @@ func TestValidateNode(t *testing.T) {
 
 	c := client.ServiceClient()
 	actual, err := nodes.Validate(c, "1234asdf").Extract()
-	if err != nil {
-		t.Fatalf("Unexpected Get error: %v", err)
-	}
-
+	th.AssertNoErr(t, err)
 	th.CheckDeepEquals(t, NodeFooValidation, *actual)
+}
+
+func TestInjectNMI(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleInjectNMISuccessfully(t)
+
+	c := client.ServiceClient()
+	err := nodes.InjectNMI(c, "1234asdf").ExtractErr()
+	th.AssertNoErr(t, err)
 }

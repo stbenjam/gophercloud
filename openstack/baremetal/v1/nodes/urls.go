@@ -29,3 +29,7 @@ func updateURL(client *gophercloud.ServiceClient, id string) string {
 func validateURL(client *gophercloud.ServiceClient, id string) string {
 	return client.ServiceURL("nodes", id, "validate")
 }
+
+func injectNMIURL(client *gophercloud.ServiceClient, id string) string {
+	return client.ServiceURL("nodes", id, "management", "inject_nmi")
+}

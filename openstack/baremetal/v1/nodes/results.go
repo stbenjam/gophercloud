@@ -230,6 +230,12 @@ type ValidateResult struct {
 	gophercloud.Result
 }
 
+// InjectNMIResult is the response from an InjectNMI operation. Call its ExtractErr
+// method to determine if the call succeeded or failed.
+type InjectNMIResult struct {
+	gophercloud.ErrResult
+}
+
 // Extract interprets a validateResult as NodeValidation, if possible.
 func (r ValidateResult) Extract() (*NodeValidation, error) {
 	var s NodeValidation
