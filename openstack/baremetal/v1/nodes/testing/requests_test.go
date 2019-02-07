@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/nodes/target_provision_state"
 	"testing"
 
 	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/nodes"
@@ -245,7 +246,7 @@ func TestNodeChangeProvisionStateActive(t *testing.T) {
 
 	c := client.ServiceClient()
 	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
-		Target: "active",
+		Target: target_provision_state.Active,
 		ConfigDrive: &nodes.ConfigDrive{
 			Value: "http://127.0.0.1/images/test-node-config-drive.iso.gz",
 		},
@@ -261,7 +262,7 @@ func TestNodeChangeProvisionStateClean(t *testing.T) {
 
 	c := client.ServiceClient()
 	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
-		Target: "clean",
+		Target: target_provision_state.Clean,
 		CleanSteps: []nodes.CleanStep{
 			{
 				Interface: "deploy",

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/nodes/target_provision_state"
 	"github.com/gophercloud/gophercloud/pagination"
 	"io/ioutil"
 )
@@ -412,10 +413,10 @@ func (d *ConfigDrive) MarshalJSON() ([]byte, error) {
 
 // ProvisionStateOpts for a request to change a node's provision state.
 type ProvisionStateOpts struct {
-	Target         ProvisionState `json:"target,required"`
-	ConfigDrive    *ConfigDrive   `json:"configdrive,omitempty"` // Could be a string, or a File
-	CleanSteps     []CleanStep    `json:"clean_steps,omitempty"`
-	RescuePassword string         `json:"rescue_password,omitempty"`
+	Target         target_provision_state.State `json:"target,required"`
+	ConfigDrive    *ConfigDrive                 `json:"configdrive,omitempty"` // Could be a string, or a File
+	CleanSteps     []CleanStep                  `json:"clean_steps,omitempty"`
+	RescuePassword string                       `json:"rescue_password,omitempty"`
 }
 
 // Request a change to the Node’s provision state. Acceptable target states depend on the Node’s current provision
