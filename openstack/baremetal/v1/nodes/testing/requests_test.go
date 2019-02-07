@@ -203,3 +203,75 @@ func TestGetSupportedBootDevices(t *testing.T) {
 	th.AssertNoErr(t, err)
 	th.CheckDeepEquals(t, NodeSupportedBootDevice, bootDevices)
 }
+
+func TestConfigDriveMayBeFile(t *testing.T) {
+	message := []byte("The quick brown fox jumped over the lazy dog.")
+	encodedJSON := "\"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu\""
+
+	f := nodes.ConfigDrive{
+		Path: th.CreateTempFile(t, message),
+	}
+	result, err := f.MarshalJSON()
+
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, string(result), encodedJSON)
+}
+
+func TestConfigDriveMayBeValue(t *testing.T) {
+	f := nodes.ConfigDrive{
+		Value: "configdrive",
+	}
+
+	result, err := f.MarshalJSON()
+
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, string(result), "\"configdrive\"")
+}
+
+func TestConfigDriveMayNotBeBoth(t *testing.T) {
+	f := nodes.ConfigDrive{
+		Value: "configdrive",
+		Path:  "/foo/bar/baz",
+	}
+
+	_, err := f.MarshalJSON()
+	th.AssertEquals(t, err, nodes.ErrConfigDriveMustBeEitherPathOrValueNotBoth{})
+}
+
+func TestNodeChangeProvisionStateActive(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleNodeChangeProvisionStateDeploy(t)
+
+	c := client.ServiceClient()
+	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
+		Target: "active",
+		ConfigDrive: &nodes.ConfigDrive{
+			Value: "http://127.0.0.1/images/test-node-config-drive.iso.gz",
+		},
+	}).ExtractErr()
+
+	th.AssertNoErr(t, err)
+}
+
+func TestNodeChangeProvisionStateClean(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleNodeChangeProvisionStateClean(t)
+
+	c := client.ServiceClient()
+	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
+		Target: "clean",
+		CleanSteps: []nodes.CleanStep{
+			{
+				Interface: "deploy",
+				Step:      "upgrade_firmware",
+				Args: map[string]string{
+					"force": "True",
+				},
+			},
+		},
+	}).ExtractErr()
+
+	th.AssertNoErr(t, err)
+}

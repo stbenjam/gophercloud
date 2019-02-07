@@ -3,8 +3,11 @@ package nodes
 import (
 	"fmt"
 
+	"encoding/base64"
+	"encoding/json"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/pagination"
+	"io/ioutil"
 )
 
 // ListOptsBuilder allows extensions to add additional parameters to the
@@ -346,6 +349,80 @@ func GetBootDevice(client *gophercloud.ServiceClient, id string) (r BootDeviceRe
 func GetSupportedBootDevices(client *gophercloud.ServiceClient, id string) (r SupportedBootDeviceResult) {
 	_, r.Err = client.Get(supportedBootDeviceURL(client, id), &r.Body, &gophercloud.RequestOpts{
 		OkCodes: []int{200},
+	})
+	return
+}
+
+type PowerState string
+
+const (
+	PowerOn       PowerState = "power on"
+	PowerOff      PowerState = "power off"
+	Rebooting     PowerState = "rebooting"
+	SoftPowerOff  PowerState = "soft power off"
+	SoftRebooting PowerState = "soft rebooting"
+)
+
+type PowerStateOpts struct {
+	Target  PowerState `json:"target,required"`
+	Timeout string     `json:"target,omitempty"`
+}
+
+func ChangePowerState(client *gophercloud.ServiceClient, id string, opts PowerStateOpts) (r ChangeStateResult) {
+	_, r.Err = client.Put(powerStateURL(client, id), opts, nil, &gophercloud.RequestOpts{
+		OkCodes: []int{202},
+	})
+	return
+}
+
+// A cleaning step has required keys ‘interface’ and ‘step’, and optional key ‘args’. If specified,
+// the value for ‘args’ is a keyword variable argument dictionary that is passed to the cleaning step
+// method.
+type CleanStep struct {
+	Interface string            `json:"interface,required"`
+	Step      string            `json:"step,required"`
+	Args      map[string]string `json:"args,omitempty"`
+}
+
+// File struct contains either a string value to send to the API, or a path to a gzipped image file.
+type ConfigDrive struct {
+	Value string
+	Path  string
+}
+
+// MarshalJSON for a File reads the file from disk, and encodes it as base64 for sending to the Ironic API
+func (d *ConfigDrive) MarshalJSON() ([]byte, error) {
+	if d.Path != "" && d.Value != "" {
+		return nil, ErrConfigDriveMustBeEitherPathOrValueNotBoth{}
+	}
+
+	if d.Path != "" {
+		contents, err := ioutil.ReadFile(d.Path)
+		if err != nil {
+			return nil, err
+		}
+
+		return json.Marshal(base64.StdEncoding.EncodeToString(contents))
+	} else if d.Value != "" {
+		return json.Marshal(d.Value)
+	} else {
+		return []byte{}, nil
+	}
+}
+
+// ProvisionStateOpts for a request to change a node's provision state.
+type ProvisionStateOpts struct {
+	Target         ProvisionState `json:"target,required"`
+	ConfigDrive    *ConfigDrive   `json:"configdrive,omitempty"` // Could be a string, or a File
+	CleanSteps     []CleanStep    `json:"clean_steps,omitempty"`
+	RescuePassword string         `json:"rescue_password,omitempty"`
+}
+
+// Request a change to the Node’s provision state. Acceptable target states depend on the Node’s current provision
+// state. More detailed documentation of the Ironic State Machine is available in the developer docs.
+func ChangeProvisionState(client *gophercloud.ServiceClient, id string, opts ProvisionStateOpts) (r ChangeStateResult) {
+	_, r.Err = client.Put(provisionStateURL(client, id), opts, nil, &gophercloud.RequestOpts{
+		OkCodes: []int{202},
 	})
 	return
 }

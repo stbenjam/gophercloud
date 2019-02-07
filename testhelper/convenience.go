@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -347,4 +348,16 @@ func CheckNoErr(t *testing.T, e error) {
 	if e != nil {
 		logError(t, fmt.Sprintf("unexpected error %s", yellow(e.Error())))
 	}
+}
+
+func CreateTempFile(t *testing.T, contents []byte) string {
+	// Create temporary file
+	f, err := ioutil.TempFile("", "gophercloud-test")
+	if err != nil {
+		logFatal(t, fmt.Sprintf("unexpected error %s", yellow(err.Error())))
+	}
+	defer f.Close()
+
+	f.Write(contents)
+	return f.Name()
 }

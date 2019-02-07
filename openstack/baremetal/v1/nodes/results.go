@@ -16,6 +16,20 @@ func (r nodeResult) Extract() (*Node, error) {
 	return &s, err
 }
 
+// Extract interprets a validateResult as NodeValidation, if possible.
+func (r BootDeviceResult) Extract() (*BootDevice, error) {
+	var s BootDevice
+	err := r.ExtractInto(&s)
+	return &s, err
+}
+
+// Extract interprets a validateResult as NodeValidation, if possible.
+func (r SupportedBootDeviceResult) Extract() ([]string, error) {
+	var s []string
+	err := r.ExtractInto(&s)
+	return s, err
+}
+
 func (r nodeResult) ExtractInto(v interface{}) error {
 	return r.Result.ExtractIntoStructPtr(v, "")
 }
@@ -248,6 +262,12 @@ type SupportedBootDeviceResult struct {
 	gophercloud.Result
 }
 
+// ChangeStateResult is the response from any state change operation. Call its ExtractErr
+// method to determine if the call succeeded or failed.
+type ChangeStateResult struct {
+	gophercloud.ErrResult
+}
+
 // Extract interprets a validateResult as NodeValidation, if possible.
 func (r ValidateResult) Extract() (*NodeValidation, error) {
 	var s NodeValidation
@@ -275,18 +295,4 @@ type NodeValidation struct {
 	Raid       DriverValidation `json:"raid"`
 	Rescue     DriverValidation `json:"rescue"`
 	Storage    DriverValidation `json:"storage"`
-}
-
-// Extract interprets a validateResult as NodeValidation, if possible.
-func (r BootDeviceResult) Extract() (*BootDevice, error) {
-	var s BootDevice
-	err := r.ExtractInto(&s)
-	return &s, err
-}
-
-// Extract interprets a validateResult as NodeValidation, if possible.
-func (r SupportedBootDeviceResult) Extract() ([]string, error) {
-	var s []string
-	err := r.ExtractInto(&s)
-	return s, err
 }

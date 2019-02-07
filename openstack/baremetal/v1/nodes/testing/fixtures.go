@@ -525,8 +525,39 @@ const NodeValidationBody = `
 }
 `
 
-const NodeBootDeviceBody = `{"boot_device":"pxe","persistent":false}`
-const NodeSupportedBootDeviceBody = `["pxe", "disk"]`
+const NodeBootDeviceBody = `
+{
+  "boot_device":"pxe",
+  "persistent":false
+}
+`
+
+const NodeSupportedBootDeviceBody = `
+[
+  "pxe",
+  "disk"
+]
+`
+
+const NodeProvisionStateActiveBody = `
+{
+    "target": "active",
+    "configdrive": "http://127.0.0.1/images/test-node-config-drive.iso.gz"
+}
+`
+
+const NodeProvisionStateCleanBody = `{
+    "target": "clean",
+    "clean_steps": [
+        {
+            "interface": "deploy",
+            "step": "upgrade_firmware",
+            "args": {
+                "force": "True"
+            }
+        }
+    ]
+}`
 
 var (
 	NodeFoo = nodes.Node{
@@ -821,7 +852,7 @@ func HandleInjectNMISuccessfully(t *testing.T) {
 	th.Mux.HandleFunc("/nodes/1234asdf/management/inject_nmi", func(w http.ResponseWriter, r *http.Request) {
 		th.TestMethod(t, r, "PUT")
 		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
-		th.TestBody(t, r, "{}")
+		th.TestJSONRequest(t, r, "{}")
 
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -832,7 +863,7 @@ func HandleSetBootDeviceSuccessfully(t *testing.T) {
 	th.Mux.HandleFunc("/nodes/1234asdf/management/boot_device", func(w http.ResponseWriter, r *http.Request) {
 		th.TestMethod(t, r, "PUT")
 		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
-		th.TestBody(t, r, NodeBootDeviceBody)
+		th.TestJSONRequest(t, r, NodeBootDeviceBody)
 
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -855,5 +886,23 @@ func HandleGetSupportedBootDeviceSuccessfully(t *testing.T) {
 		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, NodeSupportedBootDeviceBody)
+	})
+}
+
+func HandleNodeChangeProvisionStateDeploy(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/states/provision", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestJSONRequest(t, r, NodeProvisionStateActiveBody)
+		w.WriteHeader(http.StatusAccepted)
+	})
+}
+
+func HandleNodeChangeProvisionStateClean(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/states/provision", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestJSONRequest(t, r, NodeProvisionStateCleanBody)
+		w.WriteHeader(http.StatusAccepted)
 	})
 }
