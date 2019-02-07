@@ -236,6 +236,18 @@ type InjectNMIResult struct {
 	gophercloud.ErrResult
 }
 
+// BootDeviceResult is the response from a GetBootDevice operation. Call its Extract
+// method to interpret it as a BootDevice struct.
+type BootDeviceResult struct {
+	gophercloud.Result
+}
+
+// SupportedBootDeviceResult is the response from a GetSupportedBootDevices operation. Call its Extract
+// method to interpret it as an array of supported boot device values.
+type SupportedBootDeviceResult struct {
+	gophercloud.Result
+}
+
 // Extract interprets a validateResult as NodeValidation, if possible.
 func (r ValidateResult) Extract() (*NodeValidation, error) {
 	var s NodeValidation
@@ -263,4 +275,18 @@ type NodeValidation struct {
 	Raid       DriverValidation `json:"raid"`
 	Rescue     DriverValidation `json:"rescue"`
 	Storage    DriverValidation `json:"storage"`
+}
+
+// Extract interprets a validateResult as NodeValidation, if possible.
+func (r BootDeviceResult) Extract() (*BootDevice, error) {
+	var s BootDevice
+	err := r.ExtractInto(&s)
+	return &s, err
+}
+
+// Extract interprets a validateResult as NodeValidation, if possible.
+func (r SupportedBootDeviceResult) Extract() ([]string, error) {
+	var s []string
+	err := r.ExtractInto(&s)
+	return s, err
 }

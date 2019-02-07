@@ -525,6 +525,9 @@ const NodeValidationBody = `
 }
 `
 
+const NodeBootDeviceBody = `{"boot_device":"pxe","persistent":false}`
+const NodeSupportedBootDeviceBody = `["pxe", "disk"]`
+
 var (
 	NodeFoo = nodes.Node{
 		UUID:                 "d2630783-6ec8-4836-b556-ab427c4b581e",
@@ -613,6 +616,16 @@ var (
 		Storage: nodes.DriverValidation{
 			Result: true,
 		},
+	}
+
+	NodeBootDevice = nodes.BootDevice{
+		BootDevice: "pxe",
+		Persistent: false,
+	}
+
+	NodeSupportedBootDevice = []string{
+		"pxe",
+		"disk",
 	}
 
 	NodeBar = nodes.Node{
@@ -811,5 +824,36 @@ func HandleInjectNMISuccessfully(t *testing.T) {
 		th.TestBody(t, r, "{}")
 
 		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+// HandleSetBootDeviceSuccessfully sets up the test server to respond to a set boot device request for a node
+func HandleSetBootDeviceSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/management/boot_device", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestBody(t, r, NodeBootDeviceBody)
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+// HandleGetBootDeviceSuccessfully sets up the test server to respond to a get boot device request for a node
+func HandleGetBootDeviceSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/management/boot_device", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "GET")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, NodeBootDeviceBody)
+	})
+}
+
+// HandleGetBootDeviceSuccessfully sets up the test server to respond to a get boot device request for a node
+func HandleGetSupportedBootDeviceSuccessfully(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/management/boot_device/supported", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "GET")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, NodeSupportedBootDeviceBody)
 	})
 }

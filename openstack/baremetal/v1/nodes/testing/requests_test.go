@@ -168,3 +168,38 @@ func TestInjectNMI(t *testing.T) {
 	err := nodes.InjectNMI(c, "1234asdf").ExtractErr()
 	th.AssertNoErr(t, err)
 }
+
+func TestSetBootDevice(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleSetBootDeviceSuccessfully(t)
+
+	c := client.ServiceClient()
+	err := nodes.SetBootDevice(c, "1234asdf", nodes.BootDevice{
+		BootDevice: "pxe",
+		Persistent: false,
+	}).ExtractErr()
+	th.AssertNoErr(t, err)
+}
+
+func TestGetBootDevice(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleGetBootDeviceSuccessfully(t)
+
+	c := client.ServiceClient()
+	bootDevice, err := nodes.GetBootDevice(c, "1234asdf").Extract()
+	th.AssertNoErr(t, err)
+	th.CheckDeepEquals(t, NodeBootDevice, *bootDevice)
+}
+
+func TestGetSupportedBootDevices(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleGetSupportedBootDeviceSuccessfully(t)
+
+	c := client.ServiceClient()
+	bootDevices, err := nodes.GetSupportedBootDevices(c, "1234asdf").Extract()
+	th.AssertNoErr(t, err)
+	th.CheckDeepEquals(t, NodeSupportedBootDevice, bootDevices)
+}

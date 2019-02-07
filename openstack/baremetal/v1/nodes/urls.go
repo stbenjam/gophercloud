@@ -33,3 +33,11 @@ func validateURL(client *gophercloud.ServiceClient, id string) string {
 func injectNMIURL(client *gophercloud.ServiceClient, id string) string {
 	return client.ServiceURL("nodes", id, "management", "inject_nmi")
 }
+
+func bootDeviceURL(client *gophercloud.ServiceClient, id string) string {
+	return client.ServiceURL("nodes", id, "management", "boot_device")
+}
+
+func supportedBootDeviceURL(client *gophercloud.ServiceClient, id string) string {
+	return client.ServiceURL("nodes", id, "management", "boot_device", "supported")
+}

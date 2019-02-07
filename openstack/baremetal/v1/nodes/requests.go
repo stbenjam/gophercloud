@@ -319,3 +319,33 @@ func InjectNMI(client *gophercloud.ServiceClient, id string) (r InjectNMIResult)
 	})
 	return
 }
+
+type BootDevice struct {
+	BootDevice string `json:"boot_device"` // e.g., 'pxe', 'disk', etc.
+	Persistent bool   `json:"persistent"`  // Whether this is one-time or not
+}
+
+// Set the boot device for the given Node, and set it persistently or for one-time boot. The exact behaviour
+// of this depends on the hardware driver.
+func SetBootDevice(client *gophercloud.ServiceClient, id string, bootDevice BootDevice) (r gophercloud.ErrResult) {
+	_, r.Err = client.Put(bootDeviceURL(client, id), bootDevice, nil, &gophercloud.RequestOpts{
+		OkCodes: []int{204},
+	})
+	return
+}
+
+// Get the current boot device for the given Node.
+func GetBootDevice(client *gophercloud.ServiceClient, id string) (r BootDeviceResult) {
+	_, r.Err = client.Get(bootDeviceURL(client, id), &r.Body, &gophercloud.RequestOpts{
+		OkCodes: []int{200},
+	})
+	return
+}
+
+// Retrieve the acceptable set of supported boot devices for a specific Node.
+func GetSupportedBootDevices(client *gophercloud.ServiceClient, id string) (r SupportedBootDeviceResult) {
+	_, r.Err = client.Get(supportedBootDeviceURL(client, id), &r.Body, &gophercloud.RequestOpts{
+		OkCodes: []int{200},
+	})
+	return
+}
