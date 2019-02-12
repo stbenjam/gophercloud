@@ -2,7 +2,9 @@ package gophercloud
 
 import (
 	"fmt"
+	"io"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -99,4 +101,25 @@ func NormalizePathURL(basePath, rawPath string) (string, error) {
 	u.Scheme = "file"
 	return u.String(), nil
 
+}
+
+// IsGzipepd determines if a given file is gzipped or not
+func IsGzipped(path string) (bool, error) {
+	r, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer r.Close()
+
+	buf := []byte{0,0}
+	count, err := io.ReadFull(r, buf)
+	if err != nil {
+		return false, err
+	}
+	if count != 2 {
+		return false, fmt.Errorf("could not read gzip header from file")
+	}
+
+	// Per RFC1952, the first two bytes being 0x1F and 0x8B indicate the file is gzipped
+	return buf[0] == 0x1F && buf[1] == 0x8B, nil
 }

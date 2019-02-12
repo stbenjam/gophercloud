@@ -489,7 +489,7 @@ const NodeProvisionStateActiveBody = `
 const NodeProvisionStateActiveFileBody = `
 {
     "target": "active",
-	"configdrive": "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu"
+	"configdrive": "H4sIAAAAAAAA/wrJSFUoLM1MzlZIKsovz1NIy69QyCrNLUhNUcgvSy1SKMlIVchJrKpUSMlP1wMEAAD//0JGo4ItAAAA"
 }
 `
 

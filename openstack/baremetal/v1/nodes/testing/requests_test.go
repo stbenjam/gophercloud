@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"os"
 	"testing"
 
 	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/nodes"
@@ -154,16 +155,17 @@ func TestUpdateNode(t *testing.T) {
 }
 
 func TestConfigDriveMayBeFile(t *testing.T) {
-	message := []byte("The quick brown fox jumped over the lazy dog.")
-	encodedJSON := "\"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu\""
+	image := []byte("The quick brown fox jumped over the lazy dog.")
+	gzippedAndEncoded := "\"H4sIAAAAAAAA/wrJSFUoLM1MzlZIKsovz1NIy69QyCrNLUhNUcgvSy1SKMlIVchJrKpUSMlP1wMEAAD//0JGo4ItAAAA\""
 
 	opts := nodes.ConfigDriveOpts{
-		Path: th.CreateTempFile(t, message),
+		Path: th.CreateTempFile(t, image),
 	}
+	defer os.Remove(opts.Path)
 
 	result, err := opts.MarshalJSON()
 	th.AssertNoErr(t, err)
-	th.AssertEquals(t, encodedJSON, string(result))
+	th.AssertEquals(t, gzippedAndEncoded, string(result))
 }
 
 func TestConfigDriveMayBeValue(t *testing.T) {

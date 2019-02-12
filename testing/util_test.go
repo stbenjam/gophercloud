@@ -118,5 +118,27 @@ func TestNormalizePathURL(t *testing.T) {
 	result, _ = gophercloud.NormalizePathURL(basePath, rawPath)
 	expected = strings.Join([]string{"file:/", filepath.ToSlash(baseDir), "only/file/even/more/very/nested/file.yaml"}, "/")
 	th.CheckEquals(t, expected, result)
+}
 
+func TestIsGzipped(t *testing.T) {
+	plaintext := []byte("foo")
+
+	// Contents of a gzipped file created with:  echo "a" > foo; gzip foo -c | hexdump -C
+	gzipped := []byte{0x1f, 0x8b, 0x08, 0x08, 0x5e, 0x25, 0x63, 0x5c,
+		0x00, 0x03, 0x66, 0x6f, 0x6f, 0x00, 0x4b, 0xe4,
+		0x02, 0x00, 0x07, 0xa1, 0xea, 0xdd, 0x02, 0x00,
+		0x00, 0x00,}
+
+	path := th.CreateTempFile(t, plaintext)
+	defer os.Remove(path)
+	result, err := gophercloud.IsGzipped(path)
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, false, result)
+
+
+	path = th.CreateTempFile(t, gzipped)
+	defer os.Remove(path)
+	result, err = gophercloud.IsGzipped(path)
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, true, result)
 }

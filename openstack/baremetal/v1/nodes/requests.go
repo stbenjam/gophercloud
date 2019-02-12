@@ -1,6 +1,8 @@
 package nodes
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"fmt"
 	"github.com/gophercloud/gophercloud"
@@ -51,7 +53,7 @@ type TargetProvisionState string
 
 const (
 	TargetActive   TargetProvisionState = "active"
-	TargetDelete                        = "delete"
+	TargetDeleted                       = "deleted"
 	TargetManage                        = "manage"
 	TargetProvide                       = "provide"
 	TargetInspect                       = "inspect"
@@ -322,15 +324,32 @@ type ConfigDriveOpts struct {
 	Value string
 }
 
-// Base64-encodes a configdrive file, or configdrive string value
+// JSON for a base64-encoded gzipped configdrive file, or string value
 func (opts ConfigDriveOpts) MarshalJSON() ([]byte, error) {
 	if opts.Path != "" {
-		contents, err := ioutil.ReadFile(string(opts.Path))
+		// Image to upload to Ironic must be gzipped
+		isGzipped, err := gophercloud.IsGzipped(opts.Path)
 		if err != nil {
-			return []byte(""), err
+			return nil, err
 		}
 
-		return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(contents))), err
+		// Read file contents
+		contents, err := ioutil.ReadFile(string(opts.Path))
+		if err != nil {
+			return nil, err
+		}
+
+		// If not gzipped, gzip it
+		if !isGzipped {
+			var buf bytes.Buffer
+			w := gzip.NewWriter(&buf)
+			w.Write(contents)
+			w.Close()
+			contents = buf.Bytes()
+		}
+
+			return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(contents))), err
+
 	} else {
 		return []byte(fmt.Sprintf("\"%s\"", opts.Value)), nil
 	}
