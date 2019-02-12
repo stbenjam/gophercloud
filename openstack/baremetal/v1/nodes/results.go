@@ -223,3 +223,9 @@ type UpdateResult struct {
 type DeleteResult struct {
 	gophercloud.ErrResult
 }
+
+// ChangeStateResult is the response from any state change operation. Call its ExtractErr
+// method to determine if the call succeeded or failed.
+type ChangeStateResult struct {
+	gophercloud.ErrResult
+}

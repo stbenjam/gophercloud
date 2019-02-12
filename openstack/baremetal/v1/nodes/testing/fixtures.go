@@ -480,6 +480,34 @@ const SingleNodeBody = `
 }
 `
 
+const NodeProvisionStateActiveBody = `
+{
+    "target": "active",
+    "configdrive": "http://127.0.0.1/images/test-node-config-drive.iso.gz"
+}
+`
+const NodeProvisionStateActiveFileBody = `
+{
+    "target": "active",
+	"configdrive": "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu"
+}
+`
+
+const NodeProvisionStateCleanBody = `
+{
+    "target": "clean",
+    "clean_steps": [
+        {
+            "interface": "deploy",
+            "step": "upgrade_firmware",
+            "args": {
+                "force": "True"
+            }
+        }
+    ]
+}
+`
+
 var (
 	NodeFoo = nodes.Node{
 		UUID:                 "d2630783-6ec8-4836-b556-ab427c4b581e",
@@ -706,5 +734,32 @@ func HandleNodeUpdateSuccessfully(t *testing.T, response string) {
 		th.TestJSONRequest(t, r, `[{"op": "replace", "path": "/driver", "value": "new-driver"}]`)
 
 		fmt.Fprintf(w, response)
+	})
+}
+
+func HandleNodeChangeProvisionStateActive(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/states/provision", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestJSONRequest(t, r, NodeProvisionStateActiveBody)
+		w.WriteHeader(http.StatusAccepted)
+	})
+}
+
+func HandleNodeChangeProvisionStateActiveWithFile(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/states/provision", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestJSONRequest(t, r, NodeProvisionStateActiveFileBody)
+		w.WriteHeader(http.StatusAccepted)
+	})
+}
+
+func HandleNodeChangeProvisionStateClean(t *testing.T) {
+	th.Mux.HandleFunc("/nodes/1234asdf/states/provision", func(w http.ResponseWriter, r *http.Request) {
+		th.TestMethod(t, r, "PUT")
+		th.TestHeader(t, r, "X-Auth-Token", client.TokenID)
+		th.TestJSONRequest(t, r, NodeProvisionStateCleanBody)
+		w.WriteHeader(http.StatusAccepted)
 	})
 }

@@ -152,3 +152,80 @@ func TestUpdateNode(t *testing.T) {
 	th.CheckDeepEquals(t, NodeFoo, *actual)
 
 }
+
+func TestConfigDriveMayBeFile(t *testing.T) {
+	message := []byte("The quick brown fox jumped over the lazy dog.")
+	encodedJSON := "\"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQgb3ZlciB0aGUgbGF6eSBkb2cu\""
+
+	opts := nodes.ConfigDriveOpts{
+		Path: th.CreateTempFile(t, message),
+	}
+
+	result, err := opts.MarshalJSON()
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, encodedJSON, string(result))
+}
+
+func TestConfigDriveMayBeValue(t *testing.T) {
+	f := nodes.ConfigDriveOpts{
+		Value: "configdrive",
+	}
+
+	result, err := f.MarshalJSON()
+	th.AssertNoErr(t, err)
+	th.AssertEquals(t, string(result), "\"configdrive\"")
+}
+
+func TestNodeChangeProvisionStateActiveWithFile(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleNodeChangeProvisionStateActiveWithFile(t)
+
+	c := client.ServiceClient()
+	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
+		Target: nodes.TargetActive,
+		ConfigDrive: nodes.ConfigDriveOpts{
+			Path: th.CreateTempFile(t, []byte("The quick brown fox jumped over the lazy dog.")),
+		},
+	}).ExtractErr()
+
+	th.AssertNoErr(t, err)
+}
+
+func TestNodeChangeProvisionStateActive(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleNodeChangeProvisionStateActive(t)
+
+	c := client.ServiceClient()
+	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
+		Target: nodes.TargetActive,
+		ConfigDrive: nodes.ConfigDriveOpts{
+			Value: "http://127.0.0.1/images/test-node-config-drive.iso.gz",
+		},
+	}).ExtractErr()
+
+	th.AssertNoErr(t, err)
+}
+
+func TestNodeChangeProvisionStateClean(t *testing.T) {
+	th.SetupHTTP()
+	defer th.TeardownHTTP()
+	HandleNodeChangeProvisionStateClean(t)
+
+	c := client.ServiceClient()
+	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
+		Target: nodes.TargetClean,
+		CleanSteps: []nodes.CleanStep{
+			{
+				Interface: "deploy",
+				Step:      "upgrade_firmware",
+				Args: map[string]string{
+					"force": "True",
+				},
+			},
+		},
+	}).ExtractErr()
+
+	th.AssertNoErr(t, err)
+}

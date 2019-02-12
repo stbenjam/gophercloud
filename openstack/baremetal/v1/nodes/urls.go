@@ -25,3 +25,7 @@ func getURL(client *gophercloud.ServiceClient, id string) string {
 func updateURL(client *gophercloud.ServiceClient, id string) string {
 	return deleteURL(client, id)
 }
+
+func provisionStateURL(client *gophercloud.ServiceClient, id string) string {
+	return client.ServiceURL("nodes", id, "states", "provision")
+}

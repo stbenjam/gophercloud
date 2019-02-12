@@ -1,10 +1,11 @@
 package nodes
 
 import (
+	"encoding/base64"
 	"fmt"
-
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/pagination"
+	"io/ioutil"
 )
 
 // ListOptsBuilder allows extensions to add additional parameters to the
@@ -43,6 +44,22 @@ const (
 	RescueFail                  = "rescue failed"
 	Rescuing                    = "rescuing"
 	UnrescueFail                = "unrescue failed"
+)
+
+// Target provision state is used when setting the provision state for a node.
+type TargetProvisionState string
+
+const (
+	TargetActive   TargetProvisionState = "active"
+	TargetDelete                        = "delete"
+	TargetManage                        = "manage"
+	TargetProvide                       = "provide"
+	TargetInspect                       = "inspect"
+	TargetAbort                         = "abort"
+	TargetClean                         = "clean"
+	TargetAdopt                         = "adopt"
+	TargetRescue                        = "rescue"
+	TargetUnrescue                      = "unrescue"
 )
 
 // ListOpts allows the filtering and sorting of paginated collections through
@@ -296,8 +313,57 @@ func Update(client *gophercloud.ServiceClient, id string, opts UpdateOpts) (r Up
 	return
 }
 
+type ConfigDrive interface {
+	MarshalJSON() ([]byte, error)
+}
+
+type ConfigDriveOpts struct {
+	Path  string
+	Value string
+}
+
+// Base64-encodes a configdrive file, or configdrive string value
+func (opts ConfigDriveOpts) MarshalJSON() ([]byte, error) {
+	if opts.Path != "" {
+		contents, err := ioutil.ReadFile(string(opts.Path))
+		if err != nil {
+			return []byte(""), err
+		}
+
+		return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(contents))), err
+	} else {
+		return []byte(fmt.Sprintf("\"%s\"", opts.Value)), nil
+	}
+}
+
 // Delete requests that a node be removed
 func Delete(client *gophercloud.ServiceClient, id string) (r DeleteResult) {
 	_, r.Err = client.Delete(deleteURL(client, id), nil)
+	return
+}
+
+// A cleaning step has required keys ‘interface’ and ‘step’, and optional key ‘args’. If specified,
+// the value for ‘args’ is a keyword variable argument dictionary that is passed to the cleaning step
+// method.
+type CleanStep struct {
+	Interface string            `json:"interface,required"`
+	Step      string            `json:"step,required"`
+	Args      map[string]string `json:"args,omitempty"`
+}
+
+// ProvisionStateOpts for a request to change a node's provision state.
+type ProvisionStateOpts struct {
+	Target         TargetProvisionState `json:"target,required"`
+	ConfigDrive    ConfigDrive          `json:"configdrive,omitempty"` // Could be a string, or a File
+	CleanSteps     []CleanStep          `json:"clean_steps,omitempty"`
+	RescuePassword string               `json:"rescue_password,omitempty"`
+}
+
+// Request a change to the Node’s provision state. Acceptable target states depend on the Node’s current provision
+// state. More detailed documentation of the Ironic State Machine is available in the developer docs.
+func ChangeProvisionState(client *gophercloud.ServiceClient, id string, opts ProvisionStateOpts) (r ChangeStateResult) {
+	_, r.Err = client.Put(provisionStateURL(client, id), opts, nil, &gophercloud.RequestOpts{
+		OkCodes: []int{202},
+	})
 	return
 }
