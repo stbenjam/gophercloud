@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack/baremetal/v1/nodes/target_provision_state"
 	"github.com/gophercloud/gophercloud/pagination"
 	"io/ioutil"
 )
@@ -47,6 +46,22 @@ const (
 	RescueFail                  = "rescue failed"
 	Rescuing                    = "rescuing"
 	UnrescueFail                = "unrescue failed"
+)
+
+// Target provision state is used when setting the provision state for a node.
+type TargetProvisionState string
+
+const (
+	TargetActive   TargetProvisionState = "active"
+	TargetDelete                        = "delete"
+	TargetManage                        = "manage"
+	TargetProvide                       = "provide"
+	TargetInspect                       = "inspect"
+	TargetAbort                         = "abort"
+	TargetClean                         = "clean"
+	TargetAdopt                         = "adopt"
+	TargetRescue                        = "rescue"
+	TargetUnrescue                      = "unrescue"
 )
 
 // ListOpts allows the filtering and sorting of paginated collections through
@@ -376,6 +391,13 @@ func ChangePowerState(client *gophercloud.ServiceClient, id string, opts PowerSt
 	return
 }
 
+type ConfigDrive interface {
+	ToConfigDrive() (string, error)
+}
+
+type ConfigDriveFile string
+type ConfigDriveValue string
+
 // A cleaning step has required keys ‘interface’ and ‘step’, and optional key ‘args’. If specified,
 // the value for ‘args’ is a keyword variable argument dictionary that is passed to the cleaning step
 // method.
@@ -385,38 +407,31 @@ type CleanStep struct {
 	Args      map[string]string `json:"args,omitempty"`
 }
 
-// File struct contains either a string value to send to the API, or a path to a gzipped image file.
-type ConfigDrive struct {
-	Value string
-	Path  string
+func (d ConfigDriveFile) ToConfigDrive() (string, error) {
+		contents, err := ioutil.ReadFile(string(d))
+		if err != nil {
+			return "", err
+		}
+
+		return base64.StdEncoding.EncodeToString(contents), err
 }
 
 // MarshalJSON for a File reads the file from disk, and encodes it as base64 for sending to the Ironic API
-func (d *ConfigDrive) MarshalJSON() ([]byte, error) {
-	if d.Path != "" && d.Value != "" {
-		return nil, ErrConfigDriveMustBeEitherPathOrValueNotBoth{}
+func (d ConfigDrive) MarshalJSON() ([]byte, error) {
+	result, err := d.ToConfigDrive()
+	if err != nil {
+		return nil, err
 	}
 
-	if d.Path != "" {
-		contents, err := ioutil.ReadFile(d.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		return json.Marshal(base64.StdEncoding.EncodeToString(contents))
-	} else if d.Value != "" {
-		return json.Marshal(d.Value)
-	} else {
-		return []byte{}, nil
-	}
+	return json.Marshal(result)
 }
 
 // ProvisionStateOpts for a request to change a node's provision state.
 type ProvisionStateOpts struct {
-	Target         target_provision_state.State `json:"target,required"`
-	ConfigDrive    *ConfigDrive                 `json:"configdrive,omitempty"` // Could be a string, or a File
-	CleanSteps     []CleanStep                  `json:"clean_steps,omitempty"`
-	RescuePassword string                       `json:"rescue_password,omitempty"`
+	Target         TargetProvisionState `json:"target,required"`
+	ConfigDrive    *ConfigDrive         `json:"configdrive,omitempty"` // Could be a string, or a File
+	CleanSteps     []CleanStep          `json:"clean_steps,omitempty"`
+	RescuePassword string               `json:"rescue_password,omitempty"`
 }
 
 // Request a change to the Node’s provision state. Acceptable target states depend on the Node’s current provision
