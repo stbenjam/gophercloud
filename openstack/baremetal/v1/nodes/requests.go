@@ -2,12 +2,11 @@ package nodes
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/base64"
 	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/pagination"
-	"io/ioutil"
+	"os"
 )
 
 // ListOptsBuilder allows extensions to add additional parameters to the
@@ -326,30 +325,32 @@ type ConfigDriveOpts struct {
 
 // JSON for a base64-encoded gzipped configdrive file, or string value
 func (opts ConfigDriveOpts) MarshalJSON() ([]byte, error) {
+	var contents *bytes.Buffer
+	var isGzipped bool
+
 	if opts.Path != "" {
-		// Image to upload to Ironic must be gzipped
-		isGzipped, err := gophercloud.IsGzipped(opts.Path)
+		stat, err := os.Stat(opts.Path)
 		if err != nil {
 			return nil, err
 		}
 
-		// Read file contents
-		contents, err := ioutil.ReadFile(string(opts.Path))
-		if err != nil {
-			return nil, err
+		// If opts.Path is a directory, pack it into an ISO
+		if stat.Mode().IsDir() {
+			contents, err = PackDirectoryAsISO(opts.Path)
+		} else {
+			// If opts.Path is a file, but not gzipped, gzip it
+			isGzipped, err = gophercloud.IsGzipped(opts.Path)
+			if err != nil {
+				return nil, err
+			}
+
+			if !isGzipped {
+				contents, err = GzipFile(opts.Path)
+			}
 		}
 
-		// If not gzipped, gzip it
-		if !isGzipped {
-			var buf bytes.Buffer
-			w := gzip.NewWriter(&buf)
-			w.Write(contents)
-			w.Close()
-			contents = buf.Bytes()
-		}
 
-			return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(contents))), err
-
+		return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(contents.Bytes()))), nil
 	} else {
 		return []byte(fmt.Sprintf("\"%s\"", opts.Value)), nil
 	}
@@ -386,3 +387,5 @@ func ChangeProvisionState(client *gophercloud.ServiceClient, id string, opts Pro
 	})
 	return
 }
+
+
