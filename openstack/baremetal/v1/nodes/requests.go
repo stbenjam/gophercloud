@@ -1,11 +1,11 @@
 package nodes
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/pagination"
+	"io/ioutil"
 	"os"
 )
 
@@ -314,48 +314,6 @@ func Update(client *gophercloud.ServiceClient, id string, opts UpdateOpts) (r Up
 	return
 }
 
-type ConfigDrive interface {
-	MarshalJSON() ([]byte, error)
-}
-
-type ConfigDriveOpts struct {
-	Path  string
-	Value string
-}
-
-// JSON for a base64-encoded gzipped configdrive file, or string value
-func (opts ConfigDriveOpts) MarshalJSON() ([]byte, error) {
-	var contents *bytes.Buffer
-	var isGzipped bool
-
-	if opts.Path != "" {
-		stat, err := os.Stat(opts.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		// If opts.Path is a directory, pack it into an ISO
-		if stat.Mode().IsDir() {
-			contents, err = PackDirectoryAsISO(opts.Path)
-		} else {
-			// If opts.Path is a file, but not gzipped, gzip it
-			isGzipped, err = gophercloud.IsGzipped(opts.Path)
-			if err != nil {
-				return nil, err
-			}
-
-			if !isGzipped {
-				contents, err = GzipFile(opts.Path)
-			}
-		}
-
-
-		return []byte(fmt.Sprintf("\"%s\"", base64.StdEncoding.EncodeToString(contents.Bytes()))), nil
-	} else {
-		return []byte(fmt.Sprintf("\"%s\"", opts.Value)), nil
-	}
-}
-
 // Delete requests that a node be removed
 func Delete(client *gophercloud.ServiceClient, id string) (r DeleteResult) {
 	_, r.Err = client.Delete(deleteURL(client, id), nil)
@@ -371,21 +329,101 @@ type CleanStep struct {
 	Args      map[string]string `json:"args,omitempty"`
 }
 
+// ProvisionStateOptsBuilder allows extensions to add additional parameters to the
+// ChangeProvisionState request.
+type ProvisionStateOptsBuilder interface {
+	ToProvisionStateOpts() (map[string]interface{}, error)
+}
+
 // ProvisionStateOpts for a request to change a node's provision state.
 type ProvisionStateOpts struct {
 	Target         TargetProvisionState `json:"target,required"`
-	ConfigDrive    ConfigDrive          `json:"configdrive,omitempty"` // Could be a string, or a File
+	ConfigDrive    ConfigDriveBuilder   `json:"-"`
 	CleanSteps     []CleanStep          `json:"clean_steps,omitempty"`
 	RescuePassword string               `json:"rescue_password,omitempty"`
 }
 
+type ConfigDriveBuilder interface {
+	ToConfigDrive() (*string, error)
+}
+
+type ConfigDrivePath string
+type ConfigDriveValue string
+
+// Converts a path to a valid config drive.  If a directory, will be packed as an ISO and gzipped.  If a file,
+// will be gzipped if not.  The final result is base64 encoded.
+func (path ConfigDrivePath) ToConfigDrive() (*string, error) {
+	var contents *[]byte
+
+	// Let's find out of the path is a directory or not
+	stat, err := os.Stat(string(path))
+	if err != nil {
+		return nil, err
+	}
+
+	// If path is a directory, pack it into an ISO, mkisofs must be installed
+	if stat.Mode().IsDir() {
+		contents, err = PackDirectoryAsISO(string(path))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// If path is a file, but not gzipped, gzip it
+		isGzipped, err := gophercloud.IsGzipped(string(path))
+		if err != nil {
+			return nil, err
+		}
+
+		if isGzipped {
+			result, err := ioutil.ReadFile(string(path))
+			if err != nil {
+				return nil, err
+			}
+			contents = &result
+		} else {
+			contents, err = GzipFile(string(path))
+		}
+	}
+
+	result := base64.StdEncoding.EncodeToString(*contents)
+	return &result, nil
+}
+
+func (value ConfigDriveValue) ToConfigDrive() (*string, error) {
+	result := string(value)
+	return &result, nil
+}
+
+// ToNodeCreateMap assembles a request body based on the contents of a CreateOpts.
+func (opts ProvisionStateOpts) ToProvisionStateOpts() (map[string]interface{}, error) {
+	body, err := gophercloud.BuildRequestBody(opts, "")
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert config drive
+	if opts.ConfigDrive != nil {
+		value, err := opts.ConfigDrive.ToConfigDrive()
+		if err != nil {
+			return nil, err
+		}
+		body["configdrive"] = &value
+	}
+
+	return body, nil
+}
+
 // Request a change to the Node’s provision state. Acceptable target states depend on the Node’s current provision
 // state. More detailed documentation of the Ironic State Machine is available in the developer docs.
-func ChangeProvisionState(client *gophercloud.ServiceClient, id string, opts ProvisionStateOpts) (r ChangeStateResult) {
-	_, r.Err = client.Put(provisionStateURL(client, id), opts, nil, &gophercloud.RequestOpts{
+func ChangeProvisionState(client *gophercloud.ServiceClient, id string, opts ProvisionStateOptsBuilder) (r ChangeStateResult) {
+	reqBody, err := opts.ToProvisionStateOpts()
+	if err != nil {
+		r.Err = err
+		return
+	}
+
+	_, r.Err = client.Put(provisionStateURL(client, id), reqBody, nil, &gophercloud.RequestOpts{
 		OkCodes: []int{202},
 	})
 	return
 }
-
-

@@ -5,11 +5,12 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 )
 
 // Gzips a file
-func GzipFile(path string) (*bytes.Buffer, error) {
+func GzipFile(path string) (*[]byte, error) {
 	var buf bytes.Buffer
 
 	w := gzip.NewWriter(&buf)
@@ -27,16 +28,18 @@ func GzipFile(path string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	return &buf, nil
+	result := buf.Bytes()
+	return &result, nil
 }
 
 // Packs a directory into a gzipped ISO image
-func PackDirectoryAsISO(path string) (*bytes.Buffer, error) {
+func PackDirectoryAsISO(path string) (*[]byte, error) {
 	iso, err := ioutil.TempFile("", "gophercloud-iso")
 	if err != nil {
 		return nil, err
 	}
 	iso.Close()
+	defer os.Remove(iso.Name())
 	cmd := exec.Command(
 		"mkisofs",
 		"-o", iso.Name(),

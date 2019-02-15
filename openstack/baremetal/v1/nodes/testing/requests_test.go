@@ -156,26 +156,22 @@ func TestUpdateNode(t *testing.T) {
 
 func TestConfigDriveMayBeFile(t *testing.T) {
 	image := []byte("The quick brown fox jumped over the lazy dog.")
-	gzippedAndEncoded := "\"H4sIAAAAAAAA/wrJSFUoLM1MzlZIKsovz1NIy69QyCrNLUhNUcgvSy1SKMlIVchJrKpUSMlP1wMEAAD//0JGo4ItAAAA\""
+	gzippedAndEncoded := "H4sIAAAAAAAA/wrJSFUoLM1MzlZIKsovz1NIy69QyCrNLUhNUcgvSy1SKMlIVchJrKpUSMlP1wMEAAD//0JGo4ItAAAA"
 
-	opts := nodes.ConfigDriveOpts{
-		Path: th.CreateTempFile(t, image),
-	}
-	defer os.Remove(opts.Path)
+	path := nodes.ConfigDrivePath(th.CreateTempFile(t, image))
+	defer os.Remove(string(path))
 
-	result, err := opts.MarshalJSON()
+	result, err := path.ToConfigDrive()
 	th.AssertNoErr(t, err)
-	th.AssertEquals(t, gzippedAndEncoded, string(result))
+	th.AssertEquals(t, gzippedAndEncoded, *result)
 }
 
 func TestConfigDriveMayBeValue(t *testing.T) {
-	f := nodes.ConfigDriveOpts{
-		Value: "configdrive",
-	}
+	value := nodes.ConfigDriveValue("http://example.com/image.iso.gz")
 
-	result, err := f.MarshalJSON()
+	result, err := value.ToConfigDrive()
 	th.AssertNoErr(t, err)
-	th.AssertEquals(t, string(result), "\"configdrive\"")
+	th.AssertEquals(t, *result, "http://example.com/image.iso.gz")
 }
 
 func TestNodeChangeProvisionStateActiveWithFile(t *testing.T) {
@@ -183,12 +179,13 @@ func TestNodeChangeProvisionStateActiveWithFile(t *testing.T) {
 	defer th.TeardownHTTP()
 	HandleNodeChangeProvisionStateActiveWithFile(t)
 
+	tmpFile := th.CreateTempFile(t, []byte("The quick brown fox jumped over the lazy dog."))
+	defer os.Remove(tmpFile)
+
 	c := client.ServiceClient()
 	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
 		Target: nodes.TargetActive,
-		ConfigDrive: nodes.ConfigDriveOpts{
-			Path: th.CreateTempFile(t, []byte("The quick brown fox jumped over the lazy dog.")),
-		},
+		ConfigDrive: nodes.ConfigDrivePath(tmpFile),
 	}).ExtractErr()
 
 	th.AssertNoErr(t, err)
@@ -202,9 +199,7 @@ func TestNodeChangeProvisionStateActive(t *testing.T) {
 	c := client.ServiceClient()
 	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
 		Target: nodes.TargetActive,
-		ConfigDrive: nodes.ConfigDriveOpts{
-			Value: "http://127.0.0.1/images/test-node-config-drive.iso.gz",
-		},
+		ConfigDrive: nodes.ConfigDriveValue("http://127.0.0.1/images/test-node-config-drive.iso.gz"),
 	}).ExtractErr()
 
 	th.AssertNoErr(t, err)
