@@ -111,7 +111,7 @@ func IsGzipped(path string) (bool, error) {
 	}
 	defer r.Close()
 
-	buf := []byte{0,0}
+	buf := []byte{0, 0}
 	count, err := io.ReadFull(r, buf)
 	if err != nil {
 		return false, err

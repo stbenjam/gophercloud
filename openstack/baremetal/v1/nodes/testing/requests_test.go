@@ -184,7 +184,7 @@ func TestNodeChangeProvisionStateActiveWithFile(t *testing.T) {
 
 	c := client.ServiceClient()
 	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
-		Target: nodes.TargetActive,
+		Target:      nodes.TargetActive,
 		ConfigDrive: nodes.ConfigDrivePath(tmpFile),
 	}).ExtractErr()
 
@@ -198,7 +198,7 @@ func TestNodeChangeProvisionStateActive(t *testing.T) {
 
 	c := client.ServiceClient()
 	err := nodes.ChangeProvisionState(c, "1234asdf", nodes.ProvisionStateOpts{
-		Target: nodes.TargetActive,
+		Target:      nodes.TargetActive,
 		ConfigDrive: nodes.ConfigDriveValue("http://127.0.0.1/images/test-node-config-drive.iso.gz"),
 	}).ExtractErr()
 

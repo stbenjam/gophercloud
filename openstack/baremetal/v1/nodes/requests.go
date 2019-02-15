@@ -3,10 +3,11 @@ package nodes
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/pagination"
 	"io/ioutil"
 	"os"
+
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/pagination"
 )
 
 // ListOptsBuilder allows extensions to add additional parameters to the
