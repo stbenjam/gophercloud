@@ -344,15 +344,20 @@ type ProvisionStateOpts struct {
 	RescuePassword string               `json:"rescue_password,omitempty"`
 }
 
+// ConfigDriveBuilder allows extensions to change how the configdrive is constructed.
 type ConfigDriveBuilder interface {
 	ToConfigDrive() (*string, error)
 }
 
+// A configdrive may be a path to a directory, or an image file
 type ConfigDrivePath string
+
+// A configdrive may also be a URL pointing to such an image
 type ConfigDriveValue string
 
 // Converts a path to a valid config drive.  If a directory, will be packed as an ISO and gzipped.  If a file,
-// will be gzipped if not.  The final result is base64 encoded.
+// will be gzipped if not.  The final result is base64 encoded.  The return is a pointer to avoid potentially copying
+// a large value.
 func (path ConfigDrivePath) ToConfigDrive() (*string, error) {
 	var contents *[]byte
 
@@ -390,6 +395,8 @@ func (path ConfigDrivePath) ToConfigDrive() (*string, error) {
 	return &result, nil
 }
 
+
+// ConfigDriveValue is just a string, so it is returned.
 func (value ConfigDriveValue) ToConfigDrive() (*string, error) {
 	result := string(value)
 	return &result, nil
@@ -402,7 +409,7 @@ func (opts ProvisionStateOpts) ToProvisionStateOpts() (map[string]interface{}, e
 		return nil, err
 	}
 
-	// Convert config drive
+	// Convert config drive using ToConfigDrive() interface
 	if opts.ConfigDrive != nil {
 		value, err := opts.ConfigDrive.ToConfigDrive()
 		if err != nil {
